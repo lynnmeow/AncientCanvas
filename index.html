@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本图片生成器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>文本图片生成器</h1>
+        <form id="text-form">
+            <textarea id="text1" placeholder="输入第一段文本（支持换行）" rows="5"></textarea>
+            <textarea id="text2" placeholder="输入第二段文本（支持换行，将显示在右下角）" rows="5"></textarea>
+            <textarea id="text3" placeholder="输入第三段文本（支持换行，将显示在左下角）" rows="5"></textarea>
+        </form>
+        
+        <div class="settings-group">
+            <div class="setting-item">
+                <label for="aspect-ratio">请选择图片比例：</label>
+                <select id="aspect-ratio">
+                    <option value="9:16">9:16</option>
+                    <option value="16:9">16:9</option>
+                    <option value="2:3">2:3</option>
+                    <option value="3:2">3:2</option>
+                    <option value="3:4">3:4</option>
+                    <option value="4:3">4:3</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>请选择背景颜色：</label>
+                <div class="color-picker">
+                    <div class="color-option" data-color="#BE3535" style="background-color: #BE3535;"></div>
+                    <div class="color-option" data-color="#262E35" style="background-color: #262E35;"></div>
+                    <div class="color-option" data-color="#759DD4" style="background-color: #759DD4;"></div>
+                    <div class="color-option" data-color="#4C8F71" style="background-color: #4C8F71;"></div>
+                    <div class="color-option" data-color="#5A322A" style="background-color: #5A322A;"></div>
+                    <div class="color-option" data-color="#8D2144" style="background-color: #8D2144;"></div>
+                    <div class="color-option" data-color="#D1CDD3" style="background-color: #D1CDD3;"></div>
+                    <div class="color-option" data-color="#4164BC" style="background-color: #4164BC;"></div>
+                    <div class="color-option" data-color="#79BE96" style="background-color: #79BE96;"></div>
+                    <div class="color-option" data-color="#B89F8B" style="background-color: #B89F8B;"></div>
+                    <div class="color-option" data-color="#A72C2A" style="background-color: #A72C2A;"></div>
+                    <div class="color-option" data-color="#FBC446" style="background-color: #FBC446;"></div>
+                    <div class="color-option" data-color="#979EDE" style="background-color: #979EDE;"></div>
+                    <div class="color-option" data-color="#3D888B" style="background-color: #3D888B;"></div>
+                    <div class="color-option" data-color="#D66431" style="background-color: #D66431;"></div>
+                    <div class="color-option" data-color="#D86D80" style="background-color: #D86D80;"></div>
+                    <div class="color-option" data-color="#E5A9A9" style="background-color: #E5A9A9;"></div>
+                    <div class="color-option" data-color="#5F4294" style="background-color: #5F4294;"></div>
+                    <div class="color-option" data-color="#A7D0DA" style="background-color: #A7D0DA;"></div>
+                    <div class="color-option" data-color="#DA8F57" style="background-color: #DA8F57;"></div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" id="generate-button">生成图片</button>
+        
+        <canvas id="canvas"></canvas>
+        <div class="button-group">
+            <button id="download-button" style="display: none;">保存图片</button>
+            <a id="download" href="" download="generated-image.png" style="display: none;">下载图片</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
