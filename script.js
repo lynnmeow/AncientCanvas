@@ -25,6 +25,19 @@ document.addEventListener('DOMContentLoaded', function() {
     colorOptions[0].classList.add('selected');
 });
 
+// 添加一个函数来判断颜色是否较浅
+function isLightColor(hexColor) {
+    // 将十六进制颜色转换为RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // 计算亮度 (基于人眼对不同颜色的敏感度)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    return brightness > 128; // 亮度大于128认为是浅色
+}
+
 document.getElementById('generate-button').addEventListener('click', async function() {
     // 确保字体已加载
     await document.fonts.load('32px "XiangcuiDazijitiW15-Regular"');
@@ -89,10 +102,10 @@ document.getElementById('generate-button').addEventListener('click', async funct
 
     // 金色不规则装饰
     ctx.fillStyle = 'gold';
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 150; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
-        const size = Math.random() * 10 + 5;
+        const size = Math.random() * 10 + 2;
         const rotation = Math.random() * Math.PI;
         
         // 不规则的形状
@@ -108,17 +121,40 @@ document.getElementById('generate-button').addEventListener('click', async funct
         ctx.restore();
     }
 
-    // 设置文本样式
-    ctx.fillStyle = '#F4E1B0';  // 浅黄色字体
+    // 设置文本颜色
+    const textColor = isLightColor(selectedColor) ? '#1c1414' : '#F4E1B0';
+    ctx.fillStyle = textColor;
 
-    // 优化后的水平文本换行函数（支持手动换行）
-    function drawWrappedText(text, x, y, maxWidth, fontSize) {
+    // 计算适合的字号
+    function calculateOptimalFontSize(text, maxWidth, maxHeight, baseSize) {
+        const minSize = Math.max(baseSize * 0.8, 24); // 最小字号不小于24px或基础字号的70%
+        const maxSize = baseSize * 1.3; // 最大字号为基础字号的1.5倍
+        const step = 2;
+        
+        for (let size = maxSize; size >= minSize; size -= step) {
+            ctx.font = `${size}px "XiangcuiDazijitiW15-Regular"`;
+            const metrics = ctx.measureText(text);
+            const lines = Math.ceil(metrics.width / maxWidth);
+            const totalHeight = lines * (size * 1.5);
+            
+            if (totalHeight <= maxHeight && metrics.width <= maxWidth * lines) {
+                return size;
+            }
+        }
+        return minSize;
+    }
+
+    // 优化后的水平文本换行函数
+    function drawWrappedText(text, x, y, maxWidth, baseFontSize) {
+        // 计算最佳字号，使用画布高度的40%作为第一段文本的最大高度
+        const availableHeight = canvas.height * 0.4;
+        const fontSize = calculateOptimalFontSize(text, maxWidth, availableHeight, baseFontSize);
+        
         ctx.font = `${fontSize}px "XiangcuiDazijitiW15-Regular"`;
         ctx.textAlign = 'left';
         const lineHeight = fontSize * 1.5;
         let maxLineY = y;
 
-        // 处理手动换行
         const paragraphs = text.split('\n');
         
         paragraphs.forEach(paragraph => {
@@ -139,92 +175,35 @@ document.getElementById('generate-button').addEventListener('click', async funct
                 }
             }
             ctx.fillText(line, x, lineY);
-            maxLineY = lineY + lineHeight; // 段落之间增加一个行距
+            maxLineY = lineY + lineHeight;
         });
 
-        return maxLineY; // 返回文本底部位置
+        return maxLineY;
     }
 
-    // 优化后的竖排文本换行函数（从右向左换行）
-    function drawVerticalWrappedText(text, startX, startY, maxHeight, fontSize, alignment = 'top', verticalAlign = 'top') {
-        ctx.font = `${fontSize}px "XiangcuiDazijitiW15-Regular"`;
-        ctx.textAlign = 'center';
-        const lineHeight = fontSize * 1.5;
+    // 优化竖排文本的字号计算
+    function calculateOptimalVerticalFontSize(text, maxHeight, maxWidth, baseSize) {
+        const minSize = Math.max(baseSize * 0.9, 24); // 最小字号不小于24px或基础字号的90%
+        const maxSize = baseSize * 1.5; // 最大字号为基础字号的1.5倍
+        const step = 2;
         
-        // 预处理文本，处理破折号
-        text = text.replace(/——/g, '︱︱'); // 将中文破折号替换为竖线
-        
-        // 处理手动换行，并计算每段文字的高度
-        const lines = text.split('\n');
-        const columnWidth = fontSize * 2;
-        let totalWidth = 0;
-        let maxColumnHeight = 0;
-        
-        // 计算每段文字需要的列数和总宽度
-        const linesInfo = lines.map(line => {
-            const chars = line.split('');
-            const columnHeight = chars.length * lineHeight;
-            const columnsNeeded = Math.ceil(columnHeight / (maxHeight * 0.8));
-            totalWidth += columnsNeeded * columnWidth;
-            maxColumnHeight = Math.max(maxColumnHeight, Math.min(columnHeight, maxHeight * 0.8));
-            return {
-                chars,
-                columnsNeeded,
-                columnHeight
-            };
-        });
-
-        // 计算垂直位置
-        let actualStartY = startY;
-        if (verticalAlign === 'bottom') {
-            actualStartY = canvas.height - padding - maxColumnHeight;
-        }
-        
-        // 计算水平起始位置
-        let actualStartX = startX;
-        if (alignment === 'right') {
-            // 计算右侧文本的中心位置
-            const centerX = canvas.width - (canvas.width - padding) / 4;
-            actualStartX = centerX + totalWidth / 2;
-        } else {
-            actualStartX = startX + totalWidth - columnWidth;
-        }
-
-        // 从右向左绘制每一段文字
-        linesInfo.forEach(lineInfo => {
-            const { chars, columnsNeeded } = lineInfo;
-            const charsPerColumn = Math.ceil(chars.length / columnsNeeded);
+        for (let size = maxSize; size >= minSize; size -= step) {
+            const lineHeight = size * 1.5;
+            const charsPerColumn = Math.floor(maxHeight / lineHeight);
+            const columnsNeeded = Math.ceil(text.length / charsPerColumn);
+            const totalWidth = columnsNeeded * (size * 2);
             
-            // 将字符分配到每一列
-            for (let col = 0; col < columnsNeeded; col++) {
-                let currentY = actualStartY;
-                const startChar = col * charsPerColumn;
-                const endChar = Math.min((col + 1) * charsPerColumn, chars.length);
-                
-                // 绘制当前列的字符
-                for (let i = startChar; i < endChar; i++) {
-                    ctx.fillText(chars[i], actualStartX, currentY);
-                    currentY += lineHeight;
-                }
-                
-                // 向左移动到下一列
-                if (alignment === 'right') {
-                    actualStartX -= columnWidth;
-                } else {
-                    actualStartX += columnWidth;
-                }
+            if (totalWidth <= maxWidth && text.length * lineHeight <= maxHeight * columnsNeeded) {
+                return size;
             }
-        });
-
-        return {
-            width: totalWidth,
-            height: maxColumnHeight
-        };
+        }
+        return minSize;
     }
 
-    // 计算可用空间和边距
-    const padding = 50;
-    const maxFirstTextWidth = canvas.width - (padding * 2);
+    // 修改边距和间距
+    const padding = 50; // 增大边距
+    const textSpacing = 20;
+    const maxFirstTextWidth = canvas.width - (padding * 1.2); // 增大边距
 
     // 绘制第一段文本
     const firstTextBottom = drawWrappedText(
@@ -232,30 +211,137 @@ document.getElementById('generate-button').addEventListener('click', async funct
         padding,
         padding + 32,
         maxFirstTextWidth,
-        36
+        34
     );
 
-    // 计算第二和第三段文本的可用高度
-    const availableHeight = canvas.height - padding * 2;
+    // 修改竖排文本的可用空间
+    const maxVerticalTextWidth = canvas.width * 0.4;
+    const maxVerticalTextHeight = canvas.height - firstTextBottom - textSpacing;
 
-    // 绘制第二段文本（右侧中间对齐）
+    // 调整竖排文本的基础字号
+    const text2OptimalSize = calculateOptimalVerticalFontSize(text2, maxVerticalTextHeight, maxVerticalTextWidth, 28);
+    const text3OptimalSize = calculateOptimalVerticalFontSize(text3, maxVerticalTextHeight, maxVerticalTextWidth, 28);
+
+    function drawVerticalWrappedText(text, startX, startY, maxHeight, fontSize, alignment = 'top', verticalAlign = 'top') {
+        ctx.font = `${fontSize}px "XiangcuiDazijitiW15-Regular"`;
+        ctx.textAlign = 'center';
+        const lineHeight = fontSize * 1.4;
+        const columnWidth = fontSize * 1.4; // 列宽
+        const columnSpacing = fontSize * 0.1; // 列间距
+        const lineSpacing = fontSize * 0.1; // 行间距
+        
+        // 预处理文本，处理破折号
+        text = text.replace(/——/g, '︱︱');
+        
+        // 处理手动换行，保持换行结构
+        const lines = text.split('\n').filter(line => line.length > 0);
+        
+        // 计算每列可以容纳的字符数
+        const charsPerColumn = Math.floor((maxHeight * 0.95) / lineHeight);
+        
+        // 为每行文本计算布局
+        const linesLayout = [];
+        let maxWidth = 0;
+        
+        lines.forEach(line => {
+            const chars = line.split('');
+            // 计算当前行需要的列数
+            const columns = Math.ceil(chars.length / charsPerColumn);
+            // 计算当前行的实际宽度（包含列间距）
+            const lineWidth = (columns - 1) * (columnWidth + columnSpacing) + columnWidth;
+            maxWidth = Math.max(maxWidth, lineWidth);
+            
+            linesLayout.push({
+                chars,
+                columns,
+                lineWidth
+            });
+        });
+    
+        // 计算水平起始位置
+        let actualStartX = startX;
+        if (alignment === 'right') {
+            actualStartX = canvas.width - padding * 1.2;
+        }
+    
+        // 计算实际文本高度
+        const maxCharsInColumn = Math.min(
+            charsPerColumn,
+            Math.max(...lines.map(line => Math.min(line.length, charsPerColumn)))
+        );
+        const actualTextHeight = maxCharsInColumn * lineHeight;
+        
+        // 计算垂直位置
+        let actualStartY = startY;
+        if (verticalAlign === 'bottom') {
+            actualStartY = canvas.height - padding * 1.2 - actualTextHeight;
+        }
+    
+        // 记录上一行的信息
+        let previousX = actualStartX;
+        
+        // 绘制每一行文本
+        linesLayout.forEach((layout, lineIndex) => {
+            const { chars, columns } = layout;
+            
+            // 计算当前行的起始X坐标
+            let currentX;
+            if (alignment === 'right') {
+                currentX = lineIndex === 0 ? actualStartX : previousX - lineSpacing;
+            } else {
+                currentX = lineIndex === 0 ? actualStartX : previousX + lineSpacing;
+            }
+            
+            // 绘制当前行的所有列
+            for (let col = 0; col < columns; col++) {
+                let currentY = actualStartY;
+                const columnChars = chars.slice(
+                    col * charsPerColumn, 
+                    Math.min((col + 1) * charsPerColumn, chars.length)
+                );
+                
+                // 绘制当前列的字符
+                columnChars.forEach(char => {
+                    ctx.fillText(char, currentX, currentY);
+                    currentY += lineHeight;
+                });
+                
+                // 移动到下一列，添加列间距
+                if (alignment === 'right') {
+                    currentX -= (columnWidth + columnSpacing);
+                } else {
+                    currentX += (columnWidth + columnSpacing);
+                }
+            }
+            
+            // 记录当前行的最终位置，用于下一行的起始位置计算
+            previousX = currentX - (alignment === 'right' ? -columnSpacing : columnSpacing);
+        });
+    
+        return {
+            width: maxWidth,
+            height: actualTextHeight
+        };
+    }
+    
+    // 绘制第二段文本（右侧）
     const text2Metrics = drawVerticalWrappedText(
         text2,
         canvas.width - padding,
-        padding,
-        availableHeight,
-        30,
+        firstTextBottom + textSpacing,
+        maxVerticalTextHeight,
+        text2OptimalSize,
         'right',
         'bottom'
     );
 
-    // 绘制第三段文本（左下角）
+    // 绘制第三段文本（左侧）
     const text3Metrics = drawVerticalWrappedText(
         text3,
         padding,
-        padding,
-        availableHeight,
-        30,
+        firstTextBottom + textSpacing,
+        maxVerticalTextHeight,
+        text3OptimalSize,
         'left',
         'bottom'
     );
