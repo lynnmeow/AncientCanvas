@@ -9,10 +9,14 @@
 <body>
     <div class="container">
         <h1>文本图片生成器</h1>
+        
+        <!-- 字体加载状态提示 -->
+        <div id="font-load-status" class="font-status">正在加载字体文件，请稍候</div>
+
         <form id="text-form">
-            <textarea id="text1" placeholder="输入第一段文本（支持换行）" rows="5"></textarea>
-            <textarea id="text2" placeholder="输入第二段文本（支持换行，将显示在右下角）" rows="5"></textarea>
-            <textarea id="text3" placeholder="输入第三段文本（支持换行，将显示在左下角）" rows="5"></textarea>
+            <textarea id="text1" placeholder="请输入第一段文本" rows="5"></textarea>
+            <textarea id="text2" placeholder="请输入第二段文本（将显示在右下角）" rows="5"></textarea>
+            <textarea id="text3" placeholder="请输入第三段文本（将显示在左下角）" rows="5"></textarea>
         </form>
         
         <div class="settings-group">
@@ -53,9 +57,18 @@
                     <div class="color-option" data-color="#DA8F57" style="background-color: #DA8F57;"></div>
                 </div>
             </div>
+
+            <div class="setting-item">
+                <label>装饰颜色选择：</label>
+                <div class="decoration-color color-picker">
+                    <div class="color-option selected" data-color="gold" style="background-color: #FFD700;"></div>
+                    <div class="color-option" data-color="silver" style="background-color: #f2f2f2;"></div>
+                    <div class="color-option" data-color="brown" style="background-color: #5A322A;"></div>
+                </div>
+            </div>
         </div>
 
-        <button type="button" id="generate-button">生成图片</button>
+        <button type="button" id="generate-button" style="display: none;">生成图片</button>
         
         <canvas id="canvas"></canvas>
         <div class="button-group">
