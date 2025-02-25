@@ -73,13 +73,9 @@ async function initFontLoading() {
         fontLoadStatus.innerHTML = `
             字体加载失败：<br>
             ${error.message}<br>
-            请检查：<br>
-            1. 字体文件路径是否正确<br>
-            2. 文件是否存在于指定位置<br>
-            3. 服务器配置是否正确<br>
-            5秒后自动刷新...
+            60秒后自动刷新...
         `;
-        setTimeout(() => location.reload(), 5000);
+        setTimeout(() => location.reload(), 60000);
     } finally {
         document.body.style.cursor = 'default';
     }
