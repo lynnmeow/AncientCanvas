@@ -45,7 +45,7 @@ async function initFontLoading() {
         // 增加超时处理
         const loadPromise = font.load();
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('字体加载超时 (5秒)')), 5000)
+            setTimeout(() => reject(new Error('字体加载超时 (60秒)')), 60000)
         );
 
         await Promise.race([loadPromise, timeoutPromise]);
